@@ -1,0 +1,71 @@
+WITH last_touch AS (
+    SELECT user_id,
+       MAX(timestamp) AS 'last_touch_at'
+    FROM page_visits
+    GROUP BY user_id),
+    
+source AS (SELECT lt.user_id,
+   lt.last_touch_at,
+   pv.utm_source,
+   pv.page_name
+FROM last_touch AS 'lt'
+JOIN page_visits AS 'pv'
+   ON lt.user_id = pv.user_id
+   AND lt.last_touch_at = pv.timestamp),
+   
+   pages AS (
+   SELECT
+   distinct page_name as 'page'
+   FROM source),
+   
+   cross_p AS (
+    SELECT * from pages
+   CROSS JOIN source),
+   
+   last AS (
+  SELECT user_id, utm_source,
+     page_name,  
+   CASE
+   WHEN page like '%1%'
+   AND page = page_name
+   THEN 1
+   ELSE 0
+   END AS 'landing',
+  CASE
+   WHEN page like '%2%'
+   AND page = page_name
+   THEN 1
+   ELSE 0
+   END AS 'cart',
+  CASE
+   WHEN page like '%3%'
+   AND page = page_name
+   THEN 1
+   ELSE 0
+   END AS 'checkout',
+  CASE
+   WHEN page like '%4%'
+   AND page = page_name
+   THEN 1
+   ELSE 0
+   END AS 'purchase'
+      from cross_p)
+   
+   select utm_source,
+   sum (landing),
+   sum(cart),
+   sum(checkout),
+   sum(purchase),
+   count(distinct user_id) as 'total',
+   100.0 * sum(purchase) / count(distinct user_id) as 'percent purchased'
+   FROM last
+   group by 1;
+  
+  --RESULTS
+   */utm_source	sum (landing)	sum(cart)	sum(checkout)	sum(purchase)	total	percent purchased
+buzzfeed	33	126	24	9	190	4.73684210526316
+email	0	0	532	167	692	24.1329479768786
+facebook	0	0	340	112	443	25.2821670428894
+google	8	46	135	54	238	22.6890756302521
+medium	21	132	25	7	184	3.80434782608696
+nytimes	38	153	33	9	232	3.87931034482759 /*
