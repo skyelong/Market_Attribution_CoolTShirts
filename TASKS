@@ -1,0 +1,101 @@
+--number of campaigns
+SELECT distinct utm_campaign
+FROM page_visits;
+
+--number of sources
+SELECT distinct utm_source
+FROM page_visits;
+
+--number of campaigns per source
+SELECT distinct utm_source, utm_campaign
+FROM page_visits;
+
+--page on the site
+SELECT distinct page_name
+FROM page_visits;
+
+--identifying the first touch for each customer **FILTER
+ WITH first_touch AS (
+    SELECT user_id,
+       MIN(timestamp) AS 'first_touch_at'
+    FROM page_visits
+    GROUP BY user_id),
+
+--combining this information with page and campaign
+
+comb_ft AS (SELECT ft.user_id,
+   ft.first_touch_at,
+   pv.utm_source,
+   pv.page_name,
+   pv.utm_campaign
+FROM first_touch AS 'ft'
+JOIN page_visits AS 'pv'
+   ON ft.user_id = pv.user_id
+   AND ft.first_touch_at = pv.timestamp)
+   
+   --how many first_touches per campaign
+   SELECT utm_campaign, count(first_touch_at) as 'first_touch'
+   FROM comb_ft
+   group by 1;
+   
+  -How many total purchases
+  SELECT page_name, count(distinct user_id) AS 'Total Purchase'
+  FROM page_visits
+  WHERE page_name = '4 - purchase';
+  
+  
+    WITH last_touch AS (
+    SELECT user_id,
+       MIN(timestamp) AS 'last_touch_at'
+    FROM page_visits
+    GROUP BY user_id),
+    
+comb_lt AS (SELECT lt.user_id,
+   lt.last_touch_at,
+   pv.utm_source,
+   pv.page_name,
+   pv.utm_campaign
+FROM last_touch AS 'lt'
+JOIN page_visits AS 'pv'
+   ON lt.user_id = pv.user_id
+   AND lt.last_touch_at = pv.timestamp)
+   
+   SELECT utm_campaign, count(last_touch_at) as 'last_touch'
+   FROM comb_lt
+   group by 1;
+   
+   --Purchase for each campaign
+       WITH last_touch AS (
+    SELECT user_id,
+       MIN(timestamp) AS 'last_touch_at'
+    FROM page_visits
+         WHERE page_name = '4 - purchase'
+    GROUP BY user_id),
+    
+comb_lt AS (SELECT lt.user_id,
+   lt.last_touch_at,
+   pv.utm_source,
+   pv.page_name,
+   pv.utm_campaign
+FROM last_touch AS 'lt'
+JOIN page_visits AS 'pv'
+   ON lt.user_id = pv.user_id
+   AND lt.last_touch_at = pv.timestamp)
+   
+   SELECT utm_campaign, count(last_touch_at) as 'last_touch'
+   FROM comb_lt
+   group by 1
+   order by 2 desc;
+   
+   */utm_campaign	last_touch
+weekly-newsletter	115
+retargetting-ad	113
+retargetting-campaign	54
+paid-search	52
+getting-to-know-cool-tshirts	9
+ten-crazy-cool-tshirts-facts	9
+interview-with-cool-tshirts-founder	7
+cool-tshirts-search	2/*
+
+  
+  
